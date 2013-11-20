@@ -31,7 +31,6 @@ import java.util.Properties;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.project.MavenProject;
-import org.eclipse.aether.impl.ArtifactResolver;
 
 
 @Mojo( name = "getdown-config", defaultPhase = LifecyclePhase.PROCESS_SOURCES )
@@ -44,9 +43,6 @@ public class GenerateGetdownConfigMojo
     @Parameter( defaultValue = "${project.build.directory}", property = "outputDir", required = true )
     private File outputDirectory;
 
-    @Component
-    private ArtifactResolver resolver;
-    
     @Parameter( property = "configProps")
     private Properties props;
     
@@ -56,19 +52,19 @@ public class GenerateGetdownConfigMojo
     public void execute()
         throws MojoExecutionException
     {
-        File f = outputDirectory;
+        File f = new File(outputDirectory,"getdown");
 
         if ( !f.exists() )
         {
             f.mkdirs();
         }
 
-        File touch = new File( f, "getdown.txt" );
+        File config = new File( f, "getdown.txt" );
 
         FileWriter w = null;
         try
         {
-            w = new FileWriter( touch );
+            w = new FileWriter( config );
             StringBuffer sb = new StringBuffer();
             sb.append("# Generic specified getdown.txt properties\n");
             for(Entry<Object,Object> entry : props.entrySet())
@@ -80,12 +76,16 @@ public class GenerateGetdownConfigMojo
             
             for(Artifact artifact : project.getDependencyArtifacts())
             {
-                artifact.
+                File dependency = artifact.getFile();
+                w.write("code = code/"+dependency.getName());
+                File codeFile = new File( f, artifact.getFile().getName());
+                copyFile(dependency, codeFile);
             }
+            
         }
         catch ( IOException e )
         {
-            throw new MojoExecutionException( "Error creating file " + touch, e );
+            throw new MojoExecutionException( "Error creating file.", e );
         }
         finally
         {
@@ -101,5 +101,11 @@ public class GenerateGetdownConfigMojo
                 }
             }
         }
+    }
+    
+    public void copyFile(File source, File dest) throws IOException
+    {
+        dest.mkdirs();
+        dest.createNewFile();
     }
 }
