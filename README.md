@@ -7,7 +7,7 @@ Currently, the plugin is NOT in Maven central, though the plan is to put it ther
 Below is an example configuration of your maven project to use this plugin:
 
 <pre>
-<plugin>
+<![CDATA[<plugin>
   <groupId>com.dbi</groupId>
   <artifactId>getdown-plugin</artifactId>
   <version>1.0-SNAPSHOT</version>
@@ -28,7 +28,7 @@ Below is an example configuration of your maven project to use this plugin:
       </goals>
     <execution>
   </executions>
-</plugin>
+</plugin>]]>
 </pre>
 
 
