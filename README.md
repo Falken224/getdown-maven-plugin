@@ -7,30 +7,28 @@ Currently, the plugin is NOT in Maven central, though the plan is to put it ther
 Below is an example configuration of your maven project to use this plugin:
 
   <pre>
-  <![CDATA[
-  <plugin>
-    <groupId>com.dbi</groupId>
-    <artifactId>getdown-plugin</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <configuration>
-      <!-- A reference to a base getdown.txt file in your project -->
-      <configFile>src/main/configs/getdown.txt</configFile>
-      <!-- A list of additional properties that should appear in the getdown.txt -->
-      <configProps>
-        <appbase>http://www.mycompany.com/software/myApp/
-        <ui.name>My App - Play it and enjoy!</ui.name>
-      </configProps>
-    </configuration>
-    <executions>
-      <execution>
-        <phase>install</phase>
-        <goals>
-          <goal>build</goal>
-        </goals>
-      <execution>
-    </executions>
-  </plugin>
-  ]]>
+  &lt;plugin&gt;
+    &lt;groupId&gt;com.dbi&lt;/groupId&gt;
+    &lt;artifactId&gt;getdown-plugin&lt;/artifactId&gt;
+    &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+    &lt;configuration&gt;
+      &lt;!-- A reference to a base getdown.txt file in your project --&gt;
+      &lt;configFile&gt;src/main/configs/getdown.txt&lt;/configFile&gt;
+      &lt;!-- A list of additional properties that should appear in the getdown.txt --&gt;
+      &lt;configProps&gt;
+        &lt;appbase&gt;http://www.mycompany.com/software/myApp/
+        &lt;ui.name&gt;My App - Play it and enjoy!&lt;/ui.name&gt;
+      &lt;/configProps&gt;
+    &lt;/configuration&gt;
+    &lt;executions&gt;
+      &lt;execution&gt;
+        &lt;phase&gt;install&lt;/phase&gt;
+        &lt;goals&gt;
+          &lt;goal&gt;build&lt;/goal&gt;
+        &lt;/goals&gt;
+      &lt;execution&gt;
+    &lt;/executions&gt;
+  &lt;/plugin&gt;
   </pre>
 
 The output is put into the **target/getdown** directory of your project
