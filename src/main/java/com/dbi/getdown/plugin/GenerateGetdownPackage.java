@@ -16,6 +16,7 @@ package com.dbi.getdown.plugin;
  * limitations under the License.
  */
 
+import com.threerings.getdown.tools.Digester;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 
@@ -24,11 +25,14 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.project.MavenProject;
@@ -64,7 +68,10 @@ public class GenerateGetdownPackage
     private File outputDirectory;
 
     @Parameter( property = "configProps")
-    private Properties props;
+    private Map<String,String> configProps;
+    
+    @Parameter( property = "configFile")
+    private File configFile;
     
     @Parameter( defaultValue = "${project}")
     private MavenProject project;
@@ -72,12 +79,12 @@ public class GenerateGetdownPackage
     public void execute()
         throws MojoExecutionException
     {
-        File f = new File(outputDirectory,"getdown");
-        File codeDir = new File(f, "code");
+        File appDir = new File(outputDirectory,"getdown");
+        File codeDir = new File(appDir, "code");
 
-        if ( !f.exists() )
+        if ( !appDir.exists() )
         {
-            f.mkdirs();
+            appDir.mkdirs();
         }
 
         if ( !codeDir.exists() )
@@ -85,20 +92,35 @@ public class GenerateGetdownPackage
             codeDir.mkdirs();
         }
         
-        File config = new File( f, "getdown.txt" );
+        File config = new File( appDir, "getdown.txt" );
 
-        FileWriter w = null;
+        FileWriter configWriter = null;
         try
         {
-            w = new FileWriter( config );
+            configWriter = new FileWriter( config );
+            if(configFile!=null)
+            {
+                FileReader reader = new FileReader(configFile);
+                int size=-1;
+                char[] buf = new char[1024];
+                do
+                {
+                    size = reader.read(buf);
+                    if(size>=0)
+                    {
+                        configWriter.write(buf, 0, size);
+                    }
+                }while (size>=0);
+            }
             StringBuffer sb = new StringBuffer();
-            sb.append("# Generic specified getdown.txt properties\n");
-            for(Entry<Object,Object> entry : props.entrySet())
+            sb.append("\n\n# Generic specified getdown.txt properties\n");
+            for(Entry<String,String> entry : configProps.entrySet())
             {
                 sb.append(entry.getKey().toString()).append(" = ").append(entry.getValue()).append("\n");
+                configWriter.write(sb.toString());
             }
         
-            sb.append("# Auto-generated 'code' entries\n");
+            configWriter.write("\n# Auto-generated 'code' entries\n");
             for(Dependency dep : project.getDependencies())
             {
                 String depString = dep.getGroupId()+":"+dep.getArtifactId()+":"+dep.getVersion();
@@ -108,13 +130,15 @@ public class GenerateGetdownPackage
                 for(ArtifactResult dependency : result.getArtifactResults())
                 {
                     File d = dependency.getArtifact().getFile();
-                    w.write("code = code/"+d.getName() +"\n");
+                    configWriter.write("code = code/"+d.getName() +"\n");
                     File codeFile = new File( codeDir, d.getName());
                     copyFile(d, codeFile);
                 }
             }
             copyFile(project.getArtifact().getFile(),new File(codeDir, project.getArtifact().getFile().getName()));
-            w.write("code = code/"+project.getArtifact().getFile().getName());
+            configWriter.write("code = code/"+project.getArtifact().getFile().getName());
+            
+            //This should be the LAST thing we do!  Make the digest!
         }
         catch ( IOException e )
         {
@@ -124,11 +148,11 @@ public class GenerateGetdownPackage
         }
         finally
         {
-            if ( w != null )
+            if ( configWriter != null )
             {
                 try
                 {
-                    w.close();
+                    configWriter.close();
                 }
                 catch ( IOException e )
                 {
@@ -136,10 +160,31 @@ public class GenerateGetdownPackage
                 }
             }
         }
+        try {
+            Digester.createDigest(appDir);
+        } catch (IOException e) {
+            throw new MojoExecutionException( "Error writing digest.", e );
+        }
     }
     
     public void copyFile(File source, File dest) throws IOException
     {
         dest.createNewFile();
+        FileInputStream in = new FileInputStream(source);
+        FileOutputStream out = new FileOutputStream(dest);
+        
+        byte[] buf = new byte[1024];
+        int size=-1;
+        do
+        {
+            size = in.read(buf);
+            if(size>=0)
+            {
+                out.write(buf, 0, size);
+            }
+        }while(size>=0);
+        out.flush();
+        try{in.close();}catch(Exception ex){}
+        try{out.close();}catch(Exception ex){}
     }
 }
