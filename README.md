@@ -6,7 +6,7 @@ Currently, the plugin is NOT in Maven central, though the plan is to put it ther
 
 Below is an example configuration of your maven project to use this plugin:
 
-----
+<pre>
 <plugin>
   <groupId>com.dbi</groupId>
   <artifactId>getdown-plugin</artifactId>
@@ -29,14 +29,14 @@ Below is an example configuration of your maven project to use this plugin:
     <execution>
   </executions>
 </plugin>
-----
+</pre>
 
 
 The output is put into the **target/getdown** directory of your project
 
 The resulting directory structure should look like this:
 
-----
+<pre>
 target
 |--getdown
   |--getdown.txt    #Modified with 'code = ' entries for all your dependencies.
@@ -45,7 +45,7 @@ target
     |--myApp.jar
     |--someDependency.jar
     |--anotherDependency.jar
-----
+</pre>
 
 I'm still building features . . . and this is MEGA bare-bones.  Feedback is welcome, especially as I learn how people are actually structuring their maven projects compared to how they want them structured for Getdown packaging.  Eventually, the entire **target/getdown** directory will be zipped up and attached as an artifact on the project.
 
