@@ -33,9 +33,14 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.apache.maven.archiver.MavenArchiver;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.archiver.Archiver;
+import org.codehaus.plexus.archiver.zip.ZipArchiver;
 import org.sonatype.aether.RepositorySystem;
 import org.sonatype.aether.RepositorySystemSession;
 import org.sonatype.aether.collection.CollectRequest;
@@ -75,6 +80,15 @@ public class GenerateGetdownPackage
     
     @Parameter( defaultValue = "${project}")
     private MavenProject project;
+    
+    @Parameter( property = "zipContents")
+    private boolean zipContents = false;
+    
+    @Component(role = Archiver.class, hint = "zip")
+    private ZipArchiver zipArchiver;
+    
+    @Parameter( property = "zipFileName")
+    private String zipFileName = "getdown-project.zip";
     
     public void execute()
         throws MojoExecutionException
@@ -164,6 +178,18 @@ public class GenerateGetdownPackage
             Digester.createDigest(appDir);
         } catch (IOException e) {
             throw new MojoExecutionException( "Error writing digest.", e );
+        }
+        
+        if(zipContents)
+        {
+            File zipOutFile = new File(appDir, this.zipFileName);
+            try {
+                zipArchiver.addDirectory(appDir);
+                zipArchiver.setDestFile(new File(appDir, this.zipFileName));
+                zipArchiver.createArchive();
+            } catch (IOException e) {
+                throw new MojoExecutionException( "Error zipping the getdown project.", e );
+            }
         }
     }
     
