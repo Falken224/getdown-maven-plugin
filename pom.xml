@@ -2,7 +2,7 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.dbi</groupId>
+  <groupId>com.digitalbarista</groupId>
   <artifactId>getdown-maven-plugin</artifactId>
   <version>0.1</version>
   <packaging>maven-plugin</packaging>
@@ -28,14 +28,16 @@
   </organization>
 
   <scm>
-    <connection>https://github.com/Falken224/getdown-maven-plugin.git</connection>
-    <url>https://github.com/Falken224/getdown-maven-plugin</url>
+    <connection>scm:git:git@github.com:Falken224/getdown-maven-plugin.git</connection>
+    <developerConnection>scm:git:git@github.com:Falken224/getdown-maven-plugin.git</developerConnection>
+    <url>git@github.com:Falken224/getdown-maven-plugin.git</url>
   </scm>
 
   <developers>
       <developer>
           <email>falken224@gmail.com</email>
           <id>Falken224</id>
+          <name>Nathan Nelson</name>
       </developer>
   </developers>
 
