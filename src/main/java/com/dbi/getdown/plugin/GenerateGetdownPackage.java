@@ -54,6 +54,17 @@ import org.sonatype.aether.util.artifact.DefaultArtifact;
 import org.sonatype.aether.util.filter.ScopeDependencyFilter;
 
 
+/**
+ * This Mojo can take a variety of inputs and generate a getdown.txt with appropriate
+ * 'code = ' entries, either from scratch, or from a default getdown.txt template.
+ * It will also create a basic project structure that can be deployed directly
+ * tot he web server where the appbase points, ready and configured for use.
+ * 
+ * This project structure can either be zipped up or not.
+ * 
+ * All output goes into the target/getdown directory.
+ * @author Falken
+ */
 @Mojo( name = "build", defaultPhase = LifecyclePhase.PROCESS_SOURCES )
 public class GenerateGetdownPackage
     extends AbstractMojo
@@ -67,27 +78,40 @@ public class GenerateGetdownPackage
     @Parameter( defaultValue = "${project.remoteProjectRepositories}", readonly = true)
     private List<RemoteRepository> projectRepos;
     
-    /**
-     * Location of the file.
-     */
     @Parameter( defaultValue = "${project.build.directory}", property = "outputDir", required = true )
     private File outputDirectory;
 
+    /**
+     * This parameter a map of configuration properties to be placed into the getdown.txt
+     * file.
+     */
     @Parameter( property = "configProps")
     private Map<String,String> configProps;
     
+    /**
+     * This parameter is a template getdown.txt config file which will be copied
+     * and appended to in the final product.
+     */
     @Parameter( property = "configFile")
     private File configFile;
     
     @Parameter( defaultValue = "${project}")
     private MavenProject project;
     
+    /**
+     * This flag when 'true' will zip up the contents of the target/getdown
+     * directory into a specified output file.  Defaults to 'false'
+     */
     @Parameter( property = "zipContents")
     private boolean zipContents = false;
     
     @Component(role = Archiver.class, hint = "zip")
     private ZipArchiver zipArchiver;
     
+    /**
+     * When the 'zipContents' flag is true, this is the name of the outputted
+     * ZIP file.
+     */
     @Parameter( property = "zipFileName")
     private String zipFileName = "getdown-project.zip";
     
@@ -194,7 +218,14 @@ public class GenerateGetdownPackage
         }
     }
     
-    public void copyFile(File source, File dest) throws IOException
+    /**
+     * A quick utility method to copy a file to a target location.
+     * 
+     * @param source The file to be copied.
+     * @param dest The File to be written.
+     * @throws IOException 
+     */
+    private void copyFile(File source, File dest) throws IOException
     {
         dest.createNewFile();
         FileInputStream in = new FileInputStream(source);
