@@ -44,6 +44,7 @@ import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.zip.ZipArchiver;
 import org.sonatype.aether.RepositorySystem;
 import org.sonatype.aether.RepositorySystemSession;
+import org.sonatype.aether.artifact.Artifact;
 import org.sonatype.aether.collection.CollectRequest;
 import org.sonatype.aether.repository.RemoteRepository;
 import org.sonatype.aether.resolution.ArtifactResult;
@@ -80,6 +81,9 @@ public class GenerateGetdownPackage
     
     @Parameter( defaultValue = "${project.build.directory}", property = "outputDir", required = true )
     private File outputDirectory;
+
+    @Parameter( property = "stripVersions")
+    private boolean stripVersions = false;
 
     /**
      * This parameter a map of configuration properties to be placed into the getdown.txt
@@ -168,14 +172,24 @@ public class GenerateGetdownPackage
 
                 for(ArtifactResult dependency : result.getArtifactResults())
                 {
-                    File d = dependency.getArtifact().getFile();
-                    configWriter.write("code = code/"+d.getName() +"\n");
-                    File codeFile = new File( codeDir, d.getName());
-                    copyFile(d, codeFile);
+                    Artifact artifact = dependency.getArtifact();
+                    File d = artifact.getFile();
+                    String fileName = d.getName();
+                    if (stripVersions) {
+                        fileName = artifact.getArtifactId() + ".jar";
+                    }
+
+                    copyFile(d, new File(codeDir, fileName));
+                    configWriter.write("code = code/" + fileName + "\n");
                 }
             }
-            copyFile(project.getArtifact().getFile(),new File(codeDir, project.getArtifact().getFile().getName()));
-            configWriter.write("code = code/"+project.getArtifact().getFile().getName());
+
+            String fileName = project.getArtifact().getFile().getName();
+            if (stripVersions) {
+                fileName = project.getArtifactId() + ".jar";
+            }
+            copyFile(project.getArtifact().getFile(), new File(codeDir, fileName));
+            configWriter.write("code = code/" + fileName + "\n");
             
             //This should be the LAST thing we do!  Make the digest!
         }
