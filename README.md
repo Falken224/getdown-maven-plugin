@@ -24,6 +24,30 @@ Below is an example configuration of your maven project to use this plugin:
         file names, so that getdown does not leave a trail of jar versions behind
       -->
       <stripVersions>false</stripVersions>
+
+      <!--
+        (Optional) Setup custom java_location entries (see getdown documentation
+        for details).
+
+      Per-platform example:
+      <jvmLocations>
+        <jvmLocation>
+          <platform>windows</platform>
+          <path>/jvm/jvm-windows.jar</path>
+        </jvmLocation>
+        <jvmLocation>
+          <platform>linux</platform>
+          <path>/jvm/jvm-linux.jar</path>
+        </jvmLocation>
+      </jvmLocations>
+
+      Single platform example:
+      <jvmLocations>
+        <jvmLocation>
+          <path>/jvm/jvm.jar</path>
+        </jvmLocation>
+      </jvmLocations>
+      -->
     </configuration>
     <executions>
       <execution>

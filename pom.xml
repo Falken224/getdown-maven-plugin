@@ -9,7 +9,7 @@
   <parent>
     <groupId>org.sonatype.oss</groupId>
     <artifactId>oss-parent</artifactId>
-    <version>7</version>
+    <version>9</version>
   </parent>
 
   <name>Getdown Maven Plugin</name>
@@ -17,19 +17,21 @@
   <url>https://github.com/Falken224/getdown-maven-plugin/</url>
 
   <licenses>
-      <license>
-        <name>GNU General Public License (GPL)</name>
-        <url>http://www.gnu.org/licenses/gpl.txt</url>
-      </license>
+    <license>
+      <name>GNU General Public License (GPL)</name>
+      <url>http://www.gnu.org/licenses/gpl.txt</url>
+    </license>
   </licenses>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.source>1.7</maven.compiler.source>
+    <maven.compiler.target>1.7</maven.compiler.target>
   </properties>
-    
+
   <organization>
-      <name>Digital Barista, Inc.</name>
-      <url>http://www.digitalbarista.com</url>
+    <name>Digital Barista, Inc.</name>
+    <url>http://www.digitalbarista.com</url>
   </organization>
 
   <scm>
@@ -39,60 +41,38 @@
   </scm>
 
   <developers>
-      <developer>
-          <email>falken224@gmail.com</email>
-          <id>Falken224</id>
-          <name>Nathan Nelson</name>
-      </developer>
+    <developer>
+      <email>falken224@gmail.com</email>
+      <id>Falken224</id>
+      <name>Nathan Nelson</name>
+    </developer>
   </developers>
 
   <dependencies>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-plugin-api</artifactId>
-      <version>3.0.4</version>
+      <version>3.2.3</version>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.aether</groupId>
+      <artifactId>aether-api</artifactId>
+      <version>1.0.0.v20140518</version>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.aether</groupId>
+      <artifactId>aether-util</artifactId>
+      <version>1.0.0.v20140518</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven.plugin-tools</groupId>
-      <artifactId>maven-plugin-annotations</artifactId>
-      <version>3.2</version>
-      <scope>provided</scope>
+      <artifactId>maven-plugin-tools-annotations</artifactId>
+      <version>3.3</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-core</artifactId>
-      <version>3.0.4</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-model</artifactId>
-      <version>3.0.4</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-artifact</artifactId>
-      <version>3.0.4</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-archiver</artifactId>
-      <version>2.5</version>
-    </dependency>
-    <dependency>
-      <groupId>org.codehaus.plexus</groupId>
-      <artifactId>plexus-utils</artifactId>
-      <version>3.0.8</version>
-    </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.8.2</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-        <groupId>com.threerings</groupId>
-        <artifactId>getdown</artifactId>
-        <version>1.3.1</version>
+      <groupId>com.threerings</groupId>
+      <artifactId>getdown</artifactId>
+      <version>1.3.1</version>
     </dependency>
   </dependencies>
 
@@ -104,7 +84,9 @@
         <version>3.2</version>
         <configuration>
           <goalPrefix>getdown</goalPrefix>
-          <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
+          <extractors>
+            <extractor>java-annotations</extractor>
+          </extractors>
         </configuration>
         <executions>
           <execution>
