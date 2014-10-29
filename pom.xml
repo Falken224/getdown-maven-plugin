@@ -3,7 +3,7 @@
 
   <groupId>com.digitalbarista</groupId>
   <artifactId>getdown-maven-plugin</artifactId>
-  <version>0.2</version>
+  <version>0.3-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
   <parent>
