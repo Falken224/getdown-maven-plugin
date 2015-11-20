@@ -2,7 +2,7 @@ Right now, this plugin isn't much.  It's a work in progress.
 
 But for those using the Getdown auto-updater provided by Threerings, this plugin should help generate not only your getdown.txt and digest.txt files, but will do so as a simple run of the mill Maven plugin.
 
-Currently, the plugin is NOT in Maven central, though the plan is to put it there before very long.
+This plugin is in maven central now, though it's only updated rarely, since I've kind of let development lapse.  I've taken several contributions, however, and will gladly accept any that make sense.
 
 Below is an example configuration of your maven project to use this plugin:
 
@@ -75,6 +75,8 @@ The resulting directory structure should look like this:
       |--anotherDependency.jar
 </pre>
 
-I'm still building features . . . and this is MEGA bare-bones.  Feedback is welcome, especially as I learn how people are actually structuring their maven projects compared to how they want them structured for Getdown packaging.  Eventually, the entire **target/getdown** directory will be zipped up and attached as an artifact on the project.
+Currently, the assumption is that there is ONE main project artifact, and that it's a JAR.  I had intended at one point to build in support to handle multi-artifact projects that may or may not be JARs, but I'm not sure there's much demand, and my time available to devote to this plugin isn't abundant anymore.
 
-Currently, the assumption is that there is ONE main project artifact, and that it's a JAR.  Before long, I'll build in support to handle multi-artifact projects that may or may not be JARs.
+There aren't a ton of features, since this was mostly a learning project.  This is MEGA bare-bones.  Feedback is welcome, and I'll incorporate any suggestions I can as I learn how people are actually structuring their maven projects compared to how they want them structured for Getdown packaging.  However, this is a dormant project . . . I'm not actively using it, and with the recent movement toward gradle, I'm not sure there's a huge demand for this project.
+
+However, please use it, modify it, and let me know what you think!
