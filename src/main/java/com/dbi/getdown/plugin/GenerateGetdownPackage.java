@@ -1,4 +1,4 @@
-package ru.open.getdown.plugin;
+package com.dbi.getdown.plugin;
 
 import com.threerings.getdown.tools.Digester;
 import org.apache.maven.model.Dependency;
