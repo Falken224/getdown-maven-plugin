@@ -1,1 +1,13 @@
-/target/
+.idea/
+*.iml
+!.gitignore
+*.log
+target/**/*
+target/*
+target
+log
+.settings
+.project
+.classpath
+.springBeans
+.freemarker-ide.xml
