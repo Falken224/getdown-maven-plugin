@@ -17,6 +17,9 @@
 package com.dbi.getdown.plugin;
 
 import com.threerings.getdown.tools.Digester;
+import com.threerings.getdown.util.ConfigUtil;
+
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
@@ -79,6 +82,9 @@ public class GenerateGetdownPackage
     @Parameter(defaultValue = "${project.build.directory}", property = "outputDir", required = true)
     private File outputDirectory;
 
+    @Parameter(defaultValue = "code", property="libraryName", required=true)
+    private String libraryName;
+
     @Parameter(defaultValue = "false")
     private boolean stripVersions;
 
@@ -91,6 +97,10 @@ public class GenerateGetdownPackage
      */
     @Parameter(property = "configProps")
     private Map<String,String> configProps;
+
+    @Parameter(property = "resources")
+    private List<ResourceInfo> resources;
+
 
     /**
      * This parameter is a template getdown.txt config file which will be copied
@@ -139,15 +149,36 @@ public class GenerateGetdownPackage
             copyBaseConfigurationFile(configWriter);
             writePomConfigurationEntries(configWriter);
             writeCodeEntries(applicationDirectory, configWriter);
+            writeResources(applicationDirectory,configWriter);
             writeJVMLocations(configWriter);
 
         } catch (IOException e) {
             throw new MojoExecutionException(
                     "Error creating getdown configuration file.", e);
         }
+
     }
 
-    private void generateDigest(File appDir) throws MojoExecutionException
+    private void writeResources(File applicationDirectory, Writer configWriter) throws IOException {
+		for (ResourceInfo resource : resources) {
+			String destination = resource.getDestination();
+			String sourceName = resource.getSource();
+			File sourceFile = new File(sourceName);
+
+			File resourceDir;
+			if(destination.isEmpty() || destination.equals("/")){
+				resourceDir = applicationDirectory;
+			}else{
+				resourceDir = new File(applicationDirectory,destination);
+			}
+			File destFile = new File(resourceDir, sourceFile.getName());
+			FileUtils.copyFile(sourceFile, destFile);
+			configWriter.write(String.format("resource = %s\n", sourceFile.getName()));
+		}
+
+	}
+
+	private void generateDigest(File appDir) throws MojoExecutionException
     {
         try {
             Digester.createDigest(appDir);
@@ -196,7 +227,7 @@ public class GenerateGetdownPackage
     private void writeCodeEntries(File appDirectory, Writer configWriter)
             throws IOException, MojoExecutionException
     {
-        File codeDirectory = new File(appDirectory, "code");
+        File codeDirectory = new File(appDirectory, libraryName);
         ensureDirectory(codeDirectory);
 
         configWriter.write("\n# Auto-generated 'code' entries\n");
@@ -211,7 +242,9 @@ public class GenerateGetdownPackage
             }
 
             FileUtils.copyFile(d, new File(codeDirectory, fileName));
-            configWriter.write("code = code/" + fileName + "\n");
+            configWriter.write("code = "
+            		+ libraryName
+            		+ "/" + fileName + "\n");
         }
 
         // Main artifact
@@ -220,7 +253,9 @@ public class GenerateGetdownPackage
             fileName = project.getArtifactId() + ".jar";
         }
         FileUtils.copyFile(project.getArtifact().getFile(), new File(codeDirectory, fileName));
-        configWriter.write("code = code/" + fileName + "\n");
+        configWriter.write("code = "
+        		+ libraryName
+        		+ "/" + fileName + "\n");
     }
 
     /**
