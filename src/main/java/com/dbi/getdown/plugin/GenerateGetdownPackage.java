@@ -17,18 +17,7 @@
 package com.dbi.getdown.plugin;
 
 import com.threerings.getdown.tools.Digester;
-import com.threerings.getdown.util.ConfigUtil;
-
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
+import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Component;
@@ -36,40 +25,47 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.archiver.Archiver;
-import org.codehaus.plexus.archiver.zip.ZipArchiver;
 import org.codehaus.plexus.util.FileUtils;
-import org.codehaus.plexus.util.IOUtil;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
-import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.collection.CollectRequest;
-import org.eclipse.aether.graph.Dependency;
-import org.eclipse.aether.graph.DependencyFilter;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactResult;
 import org.eclipse.aether.resolution.DependencyRequest;
 import org.eclipse.aether.resolution.DependencyResolutionException;
-import org.eclipse.aether.util.artifact.JavaScopes;
-import org.eclipse.aether.util.filter.DependencyFilterUtils;
+import org.eclipse.aether.resolution.DependencyResult;
+import org.eclipse.aether.util.filter.ScopeDependencyFilter;
 
+import java.io.*;
+import java.util.*;
+import java.util.Map.Entry;
 
 /**
  * This Mojo can take a variety of inputs and generate a getdown.txt with appropriate
  * 'code = ' entries, either from scratch, or from a default getdown.txt template.
  * It will also create a basic project structure that can be deployed directly
  * to the web server where the appbase points, ready and configured for use.
+ * <br>
+ * All output goes into the target directory.
  *
- * This project structure can either be zipped up or not.
- *
- * All output goes into the target/getdown directory.
  * @author Falken
+ * @author leontiev
+ * @author Ivan Zemlyanskiy
  */
 @Mojo(name = "build", defaultPhase = LifecyclePhase.PROCESS_SOURCES)
-public class GenerateGetdownPackage
-    extends AbstractMojo
-{
+public class GenerateGetdownPackage extends AbstractMojo {
+
+    private final static String GETDOWN_CONFIG_FILE = "getdown.txt";
+
+    private final static String GETDOWN_ARTIFACTS_DIRECTORY = "bin";
+
+    private final static String GETDOWN_JVMARG_PREFIX = "jvmarg";
+
+    private final static String GETDOWN_APPARG_PREFIX = "apparg";
+
+    private final static String GETDOWN_CODE_PREFIX = "code = " + GETDOWN_ARTIFACTS_DIRECTORY + "/";
+
     @Component
     private RepositorySystem repoSystem;
 
@@ -77,88 +73,211 @@ public class GenerateGetdownPackage
     private RepositorySystemSession repoSession;
 
     @Parameter(defaultValue = "${project.remoteProjectRepositories}", readonly = true)
-    private List<RemoteRepository> remoteRepos;
+    private List<RemoteRepository> projectRepos;
 
     @Parameter(defaultValue = "${project.build.directory}", property = "outputDir", required = true)
     private File outputDirectory;
-
-    @Parameter(defaultValue = "code", property="libraryName", required=true)
-    private String libraryName;
-
-    @Parameter(defaultValue = "false")
-    private boolean stripVersions;
-
-    @Parameter
-    private JvmLocation[] jvmLocations;
 
     /**
      * This parameter a map of configuration properties to be placed into the getdown.txt
      * file.
      */
     @Parameter(property = "configProps")
-    private Map<String,String> configProps;
+    private Map<String, String> configProps;
 
+    /**
+     * Non classpath resources to add.
+     */
     @Parameter(property = "resources")
     private List<ResourceInfo> resources;
-
 
     /**
      * This parameter is a template getdown.txt config file which will be copied
      * and appended to in the final product.
      */
-    @Parameter
+    @Parameter(property = "configFile")
     private File configFile;
+
+    @Parameter(property = "jvmargs")
+    private List<String> jvmargs;
+
+    @Parameter(property = "appargs")
+    private List<String> appargs;
+
+    @Parameter(property = "copyThis")
+    private boolean copyThis = true;
 
     @Parameter(defaultValue = "${project}")
     private MavenProject project;
 
-    /**
-     * This flag when 'true' will zip up the contents of the target/getdown
-     * directory into a specified output file.  Defaults to 'false'
-     */
-    @Parameter(defaultValue = "false")
-    private boolean zipContents;
+    @Parameter
+    private JvmLocation[] jvmLocations;
 
-    @Component(role = Archiver.class, hint = "zip")
-    private ZipArchiver zipArchiver;
+    public void execute() throws MojoExecutionException {
+        File appDir = outputDirectory;
+        File codeDir = new File(appDir, GETDOWN_ARTIFACTS_DIRECTORY);
 
-    /**
-     * When the 'zipContents' flag is true, this is the name of the outputted
-     * ZIP file.
-     */
-    @Parameter(property = "zipFileName", defaultValue = "getdown-project.zip")
-    private String zipFileName;
-
-    @Override
-    public void execute() throws MojoExecutionException
-    {
-        File appDir = new File(outputDirectory, "getdown");
-        ensureDirectory(appDir);
-
-        generateGetdownConfiguration(appDir);
-        generateDigest(appDir);
-        createZipArchive(appDir);
-    }
-
-    private void generateGetdownConfiguration(File applicationDirectory)
-            throws MojoExecutionException {
-
-        File config = new File(applicationDirectory, "getdown.txt");
-        try (Writer configWriter = new BufferedWriter(new FileWriter(config))) {
-
-            copyBaseConfigurationFile(configWriter);
-            writePomConfigurationEntries(configWriter);
-            writeCodeEntries(applicationDirectory, configWriter);
-            writeResources(applicationDirectory,configWriter);
-            writeJVMLocations(configWriter);
-
-        } catch (IOException e) {
-            throw new MojoExecutionException(
-                    "Error creating getdown configuration file.", e);
+        if (!appDir.exists()) {
+            appDir.mkdirs();
         }
 
+        if (!codeDir.exists()) {
+            codeDir.mkdirs();
+        }
+
+        File config = new File(appDir, GETDOWN_CONFIG_FILE);
+
+        FileWriter configWriter = null;
+        try {
+            configWriter = new FileWriter(config);
+            if (configFile != null) {
+                copyTemplate(configWriter);
+            }
+
+            writeJvmargs(configWriter);
+
+            writeAppargs(configWriter);
+
+            writeProperties(configWriter);
+
+            writeJVMLocations(configWriter);
+
+            Set<String> artifactNames = copyDependencies(codeDir);
+
+            writeCodes(artifactNames, configWriter);
+
+            writeResources(appDir,configWriter);
+
+            // Copy project's artifact is needed
+            if (copyThis && project.getArtifact().getFile() != null) {
+                FileUtils.copyFile(project.getArtifact().getFile(),
+                        new File(codeDir, project.getArtifact().getFile().getName()));
+                configWriter.write(GETDOWN_CODE_PREFIX + project.getArtifact().getFile().getName());
+            }
+
+        } catch (IOException e) {
+            throw new MojoExecutionException("Error creating file.", e);
+        } catch (DependencyResolutionException e) {
+            throw new MojoExecutionException("Error resolving dependency.", e);
+        } finally {
+            if (configWriter != null) {
+                try {
+                    configWriter.close();
+                } catch (IOException e) {
+                    // ignore
+                    getLog().warn("Got IOException while close configWriter: ", e);
+                }
+            }
+        }
+
+        //This should be the LAST thing we do!  Make the digest!
+        digest(appDir);
     }
 
+    private void writeAppargs(FileWriter configWriter) throws IOException {
+        StringBuilder appargsBuilder = new StringBuilder();
+        for (String apparg : appargs) {
+            appargsBuilder.append(GETDOWN_APPARG_PREFIX).append(" = ").append(apparg).append("\n");
+        }
+        configWriter.write(appargsBuilder.toString());
+    }
+
+    private void writeJvmargs(FileWriter configWriter) throws IOException {
+        StringBuilder jvmargsBuilder = new StringBuilder();
+        for (String jvmarg : jvmargs) {
+            jvmargsBuilder.append(GETDOWN_JVMARG_PREFIX).append(" = ").append(jvmarg).append("\n");
+        }
+        configWriter.write(jvmargsBuilder.toString());
+    }
+
+    private void writeCodes(Set<String> artifactNames, FileWriter configWriter) throws IOException {
+        StringBuilder codeBuilder = new StringBuilder();
+        for (String artifactName : artifactNames) {
+            codeBuilder.append(GETDOWN_CODE_PREFIX).append(artifactName).append("\n");
+        }
+        configWriter.write(codeBuilder.toString());
+    }
+
+    private void writeProperties(FileWriter configWriter) throws IOException {
+        StringBuilder propStringBuilder = new StringBuilder();
+        for (Entry<String, String> entry : configProps.entrySet()) {
+            propStringBuilder.append(entry.getKey()).append(" = ").append(entry.getValue()).append("\n");
+        }
+        configWriter.write(propStringBuilder.toString());
+    }
+
+    /**
+     * Gererates custom jvm_location entries according to the supplied
+     * configuration.
+     *
+     * @param configWriter writer to the generated getdown.txt file.
+     */
+    private void writeJVMLocations(Writer configWriter) throws IOException {
+        if (jvmLocations == null || jvmLocations.length == 0) {
+            return;
+        }
+
+        configWriter.write("\n# Auto-generated 'java_location' entries\n");
+        for (JvmLocation jvm : jvmLocations) {
+            configWriter.write("java_location = ");
+            String platform = jvm.getPlatform();
+            if (platform != null && !platform.isEmpty()) {
+                configWriter.write("[" + platform + "] ");
+            }
+            configWriter.write(jvm.getPath() + "\n");
+        }
+    }
+
+
+    private Set<String> copyDependencies(File destination) throws DependencyResolutionException, IOException {
+        Set<String> artifactNames = new HashSet<String>();
+        for (Dependency dependency : project.getDependencies()) {
+            if (!excludedScopes().contains(dependency.getScope())) {
+                String depString = dependency.getGroupId() + ":" + dependency.getArtifactId()
+                        + ":" + dependency.getVersion();
+
+                CollectRequest request = new CollectRequest(
+                        new org.eclipse.aether.graph.Dependency(
+                                new DefaultArtifact(depString), dependency.getScope()), projectRepos);
+
+                DependencyResult result = repoSystem.resolveDependencies(
+                        repoSession,
+                        new DependencyRequest(request, new ScopeDependencyFilter(null, excludedScopes())));
+
+                for (ArtifactResult artifactResult : result.getArtifactResults()) {
+                    File artifactFile = artifactResult.getArtifact().getFile();
+                    File codeFile = new File(destination, artifactFile.getName());
+                    FileUtils.copyFile(artifactFile, codeFile);
+                    artifactNames.add(artifactFile.getName());
+                }
+            }
+        }
+        return artifactNames;
+    }
+
+    private Collection<String> excludedScopes() {
+        return Arrays.asList("test", "provided");
+    }
+
+    private void copyTemplate(FileWriter configWriter) throws IOException {
+        FileReader reader = new FileReader(configFile);
+        int size = -1;
+        char[] buf = new char[1024];
+        do {
+            size = reader.read(buf);
+            if (size >= 0) {
+                configWriter.write(buf, 0, size);
+            }
+        } while (size >= 0);
+    }
+
+    private void digest(File appDir) throws MojoExecutionException {
+        try {
+            Digester.createDigest(appDir);
+        } catch (IOException e) {
+            throw new MojoExecutionException("Error writing digest.", e);
+        }
+    }
     private void writeResources(File applicationDirectory, Writer configWriter) throws IOException {
 		for (ResourceInfo resource : resources) {
 			String destination = resource.getDestination();
@@ -177,142 +296,4 @@ public class GenerateGetdownPackage
 		}
 
 	}
-
-	private void generateDigest(File appDir) throws MojoExecutionException
-    {
-        try {
-            Digester.createDigest(appDir);
-        } catch (IOException e) {
-            throw new MojoExecutionException("Error generating digest file.", e);
-        }
-    }
-
-    private void createZipArchive(File applicationDirectory)
-            throws MojoExecutionException
-    {
-        if (!zipContents) {
-            return;
-        }
-
-        try {
-            zipArchiver.addDirectory(applicationDirectory);
-            zipArchiver.setDestFile(
-                    new File(applicationDirectory, this.zipFileName));
-            zipArchiver.createArchive();
-        } catch (IOException e) {
-            throw new MojoExecutionException("Error zipping the getdown project.", e);
-        }
-    }
-
-    private void copyBaseConfigurationFile(Writer configWriter)
-            throws IOException
-    {
-        if (configFile != null) {
-            IOUtil.copy(new FileReader(configFile), configWriter);
-        }
-    }
-
-    private void writePomConfigurationEntries(Writer configWriter)
-            throws IOException
-    {
-        configWriter.write("\n\n# Pom-configured properties\n");
-        for (Entry<String, String> entry : configProps.entrySet()) {
-            configWriter.write(entry.getKey());
-            configWriter.write(" = ");
-            configWriter.write(entry.getValue());
-            configWriter.write("\n");
-        }
-    }
-
-    private void writeCodeEntries(File appDirectory, Writer configWriter)
-            throws IOException, MojoExecutionException
-    {
-        File codeDirectory = new File(appDirectory, libraryName);
-        ensureDirectory(codeDirectory);
-
-        configWriter.write("\n# Auto-generated 'code' entries\n");
-
-        // Dependencies
-        for (ArtifactResult result : resolveDependencies()) {
-            Artifact artifact = result.getArtifact();
-            File d = artifact.getFile();
-            String fileName = d.getName();
-            if (stripVersions) {
-                fileName = artifact.getArtifactId() + ".jar";
-            }
-
-            FileUtils.copyFile(d, new File(codeDirectory, fileName));
-            configWriter.write("code = "
-            		+ libraryName
-            		+ "/" + fileName + "\n");
-        }
-
-        // Main artifact
-        String fileName = project.getArtifact().getFile().getName();
-        if (stripVersions) {
-            fileName = project.getArtifactId() + ".jar";
-        }
-        FileUtils.copyFile(project.getArtifact().getFile(), new File(codeDirectory, fileName));
-        configWriter.write("code = "
-        		+ libraryName
-        		+ "/" + fileName + "\n");
-    }
-
-    /**
-     * Gererates custom jvm_location entries according to the supplied
-     * configuration.
-     *
-     * @param configWriter writer to the generated getdown.txt file.
-     */
-    private void writeJVMLocations(Writer configWriter) throws IOException
-    {
-        if (jvmLocations == null || jvmLocations.length == 0) {
-            return;
-        }
-
-        configWriter.write("\n# Auto-generated 'java_location' entries\n");
-        for (JvmLocation jvm : jvmLocations) {
-            configWriter.write("java_location = ");
-            String platform = jvm.getPlatform();
-            if (platform != null && !platform.isEmpty()) {
-                configWriter.write("["  + platform + "] ");
-            }
-            configWriter.write(jvm.getPath() + "\n");
-        }
-    }
-
-    private void ensureDirectory(File directory) throws MojoExecutionException
-    {
-        boolean ok = directory.exists() || directory.mkdirs();
-        if (!ok) {
-            throw new MojoExecutionException("Cannot create directory \""
-                    + directory.getAbsolutePath() + "\"");
-        }
-    }
-
-    private List<ArtifactResult> resolveDependencies()
-            throws MojoExecutionException
-    {
-        DependencyFilter classpathFlter = DependencyFilterUtils.classpathFilter(
-                JavaScopes.RUNTIME);
-
-        CollectRequest collectRequest = new CollectRequest();
-        org.apache.maven.artifact.Artifact artifact = project.getArtifact();
-        Artifact defaultArtifact = new DefaultArtifact(artifact.getGroupId(),
-                artifact.getArtifactId(), artifact.getType(), artifact.getVersion());
-        collectRequest.setRoot(new Dependency(defaultArtifact, JavaScopes.RUNTIME));
-        collectRequest.setRepositories(remoteRepos);
-
-        DependencyRequest dependencyRequest =
-                new DependencyRequest(collectRequest, classpathFlter);
-
-        try {
-            List<ArtifactResult> artifactResults = repoSystem.resolveDependencies(
-                    repoSession, dependencyRequest).getArtifactResults();
-            return artifactResults;
-        } catch (DependencyResolutionException ex) {
-            throw new MojoExecutionException("Error resolving dependencies.", ex);
-        }
-    }
-
 }
