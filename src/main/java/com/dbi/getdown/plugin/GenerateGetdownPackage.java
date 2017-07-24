@@ -38,6 +38,7 @@ import org.eclipse.aether.resolution.DependencyResult;
 import org.eclipse.aether.util.filter.ScopeDependencyFilter;
 
 import java.io.*;
+import java.security.GeneralSecurityException;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -265,8 +266,8 @@ public class GenerateGetdownPackage extends AbstractMojo {
 
     private void digest(File appDir) throws MojoExecutionException {
         try {
-            Digester.createDigest(appDir);
-        } catch (IOException e) {
+            Digester.createDigests(appDir, null, null, null);
+        } catch (IOException |GeneralSecurityException e) {
             throw new MojoExecutionException("Error writing digest.", e);
         }
     }
