@@ -87,6 +87,12 @@ public class GenerateGetdownPackage extends AbstractMojo {
     private Map<String, String> configProps;
 
     /**
+     * Non classpath resources to add.
+     */
+    @Parameter(property = "resources")
+    private List<ResourceInfo> resources;
+
+    /**
      * This parameter is a template getdown.txt config file which will be copied
      * and appended to in the final product.
      */
@@ -140,6 +146,8 @@ public class GenerateGetdownPackage extends AbstractMojo {
             Set<String> artifactNames = copyDependencies(codeDir);
 
             writeCodes(artifactNames, configWriter);
+
+            writeResources(appDir,configWriter);
 
             // Copy project's artifact is needed
             if (copyThis && project.getArtifact().getFile() != null) {
@@ -271,5 +279,22 @@ public class GenerateGetdownPackage extends AbstractMojo {
             throw new MojoExecutionException("Error writing digest.", e);
         }
     }
+    private void writeResources(File applicationDirectory, Writer configWriter) throws IOException {
+		for (ResourceInfo resource : resources) {
+			String destination = resource.getDestination();
+			String sourceName = resource.getSource();
+			File sourceFile = new File(sourceName);
 
+			File resourceDir;
+			if(destination.isEmpty() || destination.equals("/")){
+				resourceDir = applicationDirectory;
+			}else{
+				resourceDir = new File(applicationDirectory,destination);
+			}
+			File destFile = new File(resourceDir, sourceFile.getName());
+			FileUtils.copyFile(sourceFile, destFile);
+			configWriter.write(String.format("resource = %s\n", sourceFile.getName()));
+		}
+
+	}
 }

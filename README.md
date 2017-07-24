@@ -47,6 +47,16 @@ Below is an example configuration of your maven project to use this plugin:
           <path>/jvm/jvm.jar</path>
         </jvmLocation>
       </jvmLocations>
+
+      Adding non-classpath resources:
+      <resources>
+        <resource>
+	      <source>${basedir}/src/main/scripts/startapp.cmd</source>
+          <destination>/</destination>
+        </resource>
+      </resources>
+
+		
       -->
     </configuration>
     <executions>
