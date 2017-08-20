@@ -10,11 +10,11 @@ Below is an example configuration of your maven project to use this plugin:
   <plugin>
     <groupId>com.digitalbarista</groupId>
     <artifactId>getdown-maven-plugin</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.3</version>
     <configuration>
-      <!– A reference to a base getdown.txt file in your project –>
+      <!--A reference to a base getdown.txt file in your project-->
       <configFile>src/main/configs/getdown.txt</configFile>
-      <!– A list of additional properties that should appear in the getdown.txt –>
+      <!--A list of additional properties that should appear in the getdown.txt-->
       <configProps>
         <appbase>http://www.mycompany.com/software/myApp/
         <ui.name>My App - Play it and enjoy!</ui.name>
@@ -23,7 +23,7 @@ Below is an example configuration of your maven project to use this plugin:
         Set stripVersions to true if you want the versions removed from the jar
         file names, so that getdown does not leave a trail of jar versions behind
       -->
-      <stripVersions>false</stripVersions>
+      <!--<stripVersions>false</stripVersions>-->
 
       <!--
         (Optional) Setup custom java_location entries (see getdown documentation
