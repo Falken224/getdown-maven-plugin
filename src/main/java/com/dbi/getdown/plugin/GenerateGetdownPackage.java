@@ -226,12 +226,13 @@ public class GenerateGetdownPackage extends AbstractMojo {
         Set<String> artifactNames = new HashSet<String>();
         for (Dependency dependency : project.getDependencies()) {
             if (!excludedScopes().contains(dependency.getScope())) {
-                String depString = dependency.getGroupId() + ":" + dependency.getArtifactId()
-                        + ":" + dependency.getVersion();
-
-                CollectRequest request = new CollectRequest(
+				DefaultArtifact artifact = new DefaultArtifact(dependency.getGroupId(), 
+						dependency.getArtifactId(), dependency.getClassifier(), 
+						dependency.getType(), dependency.getVersion());
+                
+				CollectRequest request = new CollectRequest(
                         new org.eclipse.aether.graph.Dependency(
-                                new DefaultArtifact(depString), dependency.getScope()), projectRepos);
+                                artifact, dependency.getScope()), projectRepos);
 
                 DependencyResult result = repoSystem.resolveDependencies(
                         repoSession,
