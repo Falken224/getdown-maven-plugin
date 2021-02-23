@@ -1,0 +1,1 @@
+class = does.not.exist.MainApp
