@@ -1,0 +1,51 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example</groupId>
+    <artifactId>getdown-maven-plugin-it_test</artifactId>
+    <version>0.1-SNAPSHOT</version>
+
+    <name>Integration Test for getdown-maven-plugin</name>
+
+    <licenses>
+        <license>
+            <name>GNU General Public License (GPL)</name>
+            <url>http://www.gnu.org/licenses/gpl.txt</url>
+        </license>
+    </licenses>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.digitalbarista</groupId>
+                <artifactId>getdown-maven-plugin</artifactId>
+                <version>@project.version@</version>
+                <configuration>
+                    <!-- A reference to a base getdown.txt file in your project -->
+                    <configFile>src/main/configs/getdown.txt</configFile>
+                    <!-- A list of additional properties that should appear in the getdown.txt -->
+                    <configProps>
+                        <appbase>http://www.mycompany.com/software/myApp/</appbase>
+                        <ui.name>My App - Play it and enjoy!</ui.name>
+                    </configProps>
+                    <!-- Set stripVersions to true if you want the versions removed from the jar file names, so that getdown does not leave a trail of jar versions behind -->
+                    <stripVersions>false</stripVersions>
+
+                    <!-- (Optional) Setup custom java_location entries (see getdown documentation for details). Per-platform example: <jvmLocations> <jvmLocation> <platform>windows</platform> 
+                        <path>/jvm/jvm-windows.jar</path> </jvmLocation> <jvmLocation> <platform>linux</platform> <path>/jvm/jvm-linux.jar</path> </jvmLocation> </jvmLocations> Single platform example: <jvmLocations> 
+                        <jvmLocation> <path>/jvm/jvm.jar</path> </jvmLocation> </jvmLocations> -->
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+    

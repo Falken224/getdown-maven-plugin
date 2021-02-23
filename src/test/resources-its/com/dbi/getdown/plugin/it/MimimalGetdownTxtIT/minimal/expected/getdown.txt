@@ -1,0 +1,4 @@
+class = does.not.exist.MainApp
+appbase = http://www.mycompany.com/software/myApp/
+ui.name = My App - Play it and enjoy!
+code = bin/getdown-maven-plugin-it_test-0.1-SNAPSHOT.jar
